@@ -1,0 +1,697 @@
+<app-left-nav (newEvent)="updateStyleForNav($event)"></app-left-nav>
+
+<div
+  class="content-section implementation board"
+  [ngClass]="{ collapsed: isCollapsed == true }"
+>
+  <p-toast></p-toast>
+  <button
+    pButton
+    pRipple
+    type="button"
+    label="Create Issue"
+    class="p-button-outlined create-issue"
+    (click)="openCreateIssueModal()"
+  ></button>
+  <p-breadcrumb [model]="items"></p-breadcrumb>
+  <app-header [title]="title"></app-header>
+  <app-avatar-widget
+    *ngIf="!isUserListLoading"
+    class="avatar-tick-icon"
+    [users]="userAvatarList"
+    [(selection)]="selectedUsers"
+    (selectionChange)="useAvatarSelectionFilter($event)"
+  ></app-avatar-widget>
+
+  <div *ngIf="isUserListLoading" class="avatar-skeleton">
+    <p-skeleton shape="circle" size="40px" borderRadius="50%"> </p-skeleton>
+    <p-skeleton shape="circle" size="40px" borderRadius="50%"> </p-skeleton>
+    <p-skeleton shape="circle" size="40px" borderRadius="50%"> </p-skeleton>
+  </div>
+
+  <input type="text" #input style="margin: 5px 0" />
+  <div class="board-container">
+    <div class="board-middle-container">
+      <!---Todo---->
+      <div class="todo-container">
+        <div class="status-list">
+          <div *ngIf="isLoading" class="status-text">
+            <p-skeleton></p-skeleton>
+          </div>
+          <div *ngIf="!isLoading" class="status-text">
+            ToDo
+
+            <span class="lowercase-text"> {{ toDo.length }} </span>
+          </div>
+          <div
+            id="To Do"
+            cdkDropList
+            #todoList="cdkDropList"
+            [cdkDropListData]="toDo"
+            [cdkDropListConnectedTo]="[
+              inProgressList,
+              functionalReviewList,
+              doneList
+            ]"
+            (cdkDropListDropped)="drop($event)"
+          >
+            <ng-container *ngIf="!isLoading">
+              <div class="example-box" *ngFor="let item of toDo" cdkDrag>
+                <div class="issue-wrap" (click)="openDialog(item)">
+                  <div class="issue">
+                    <p class="text-dark">{{ item?.title }}</p>
+                    <div class="flex-items">
+                      <div class="avatar">
+                        <img
+                          src="{{
+                            this.fetchAvatarFromAssignee(item.assignee)
+                          }}"
+                        />
+                      </div>
+                      <span class="story-type"
+                        >{{ item?.type }}-{{ item?._id?.substring(3, 7) }}</span
+                      >
+                      <span class="type-priority">
+                        <span
+                          [ngClass]="{
+                            high: getPriority(item.priority) === 'High',
+                            low: getPriority(item.priority) === 'Low',
+                            medium: getPriority(item.priority) === 'Medium'
+                          }"
+                        >
+                          <i class="pi pi-arrow-up"></i>
+                        </span>
+                        <span class="priority">
+                          <span
+                            [ngClass]="{
+                              story: item.type == 'story',
+                              bug: item.type == 'bug',
+                              task: item.type == 'task',
+                              spike: item.type == 'spike'
+                            }"
+                          >
+                            <i
+                              class="pi"
+                              [ngClass]="{
+                                'pi-bookmark-fill': item.type == 'story',
+                                'pi-circle-fill': item.type == 'bug',
+                                'pi-check': item.type == 'task',
+                                'pi-arrow-up-right': item.type == 'spike'
+                              }"
+                            ></i>
+                          </span>
+                        </span>
+                      </span>
+                    </div>
+                    <div class="flex-items" style="margin-left: unset"></div>
+                  </div>
+                </div>
+              </div>
+            </ng-container>
+            <ng-container *ngIf="isLoading">
+              <p-skeleton
+                styleClass="rectangular-skeleton"
+                shape="rectangle"
+                width="220px"
+                height="94px"
+              ></p-skeleton>
+              <p-skeleton
+                styleClass="rectangular-skeleton"
+                shape="rectangle"
+                width="220px"
+                height="94px"
+              ></p-skeleton>
+              <p-skeleton
+                styleClass="rectangular-skeleton"
+                shape="rectangle"
+                width="220px"
+                height="94px"
+              ></p-skeleton>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+
+      <!--InProgress-->
+      <div class="todo-container">
+        <div class="status-list">
+          <div *ngIf="isLoading" class="status-text">
+            <p-skeleton></p-skeleton>
+          </div>
+          <div *ngIf="!isLoading" class="status-text">
+            Dev In Progress
+            <span class="lowercase-text"> {{ inProgress.length }} </span>
+          </div>
+          <div
+            id="In Progress"
+            cdkDropList
+            #inProgressList="cdkDropList"
+            [cdkDropListData]="inProgress"
+            [cdkDropListConnectedTo]="[
+              todoList,
+              functionalReviewList,
+              doneList
+            ]"
+            (cdkDropListDropped)="drop($event)"
+          >
+            <ng-container *ngIf="isLoading">
+              <p-skeleton
+                styleClass="rectangular-skeleton"
+                shape="rectangle"
+                width="220px"
+                height="94px"
+              ></p-skeleton>
+              <p-skeleton
+                styleClass="rectangular-skeleton"
+                shape="rectangle"
+                width="220px"
+                height="94px"
+              ></p-skeleton>
+              <p-skeleton
+                styleClass="rectangular-skeleton"
+                shape="rectangle"
+                width="220px"
+                height="94px"
+              ></p-skeleton>
+            </ng-container>
+            <ng-container *ngIf="!isLoading">
+              <div class="example-box" *ngFor="let item of inProgress" cdkDrag>
+                <div class="issue-wrap" (click)="openDialog(item)">
+                  <div class="issue">
+                    <p class="text-dark">{{ item.title }}</p>
+                    <div class="flex-items">
+                      <div class="avatar">
+                        <img
+                          src="{{
+                            this.fetchAvatarFromAssignee(item.assignee)
+                          }}"
+                        />
+                      </div>
+                      <span class="story-type"
+                        >{{ item?.type }}-{{ item?._id?.substring(3, 7) }}</span
+                      >
+                      <span class="type-priority">
+                        <span
+                          [ngClass]="{
+                            high: getPriority(item.priority) === 'High',
+                            low: getPriority(item.priority) === 'Low',
+                            medium: getPriority(item.priority) === 'Medium'
+                          }"
+                        >
+                          <i class="pi pi-arrow-up"></i>
+                        </span>
+                        <span class="priority">
+                          <span
+                            [ngClass]="{
+                              story: item.type == 'story',
+                              bug: item.type == 'bug',
+                              task: item.type == 'task',
+                              spike: item.type == 'spike'
+                            }"
+                          >
+                            <i
+                              class="pi"
+                              [ngClass]="{
+                                'pi-bookmark-fill': item.type == 'story',
+                                'pi-circle-fill': item.type == 'bug',
+                                'pi-check': item.type == 'task',
+                                'pi-arrow-up-right': item.type == 'spike'
+                              }"
+                            ></i>
+                          </span>
+                        </span>
+                      </span>
+                    </div>
+                    <div class="flex-items" style="margin-left: unset"></div>
+                  </div>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+
+      <!--Functional Review--->
+      <div class="todo-container">
+        <div class="status-list">
+          <div *ngIf="isLoading" class="status-text">
+            <p-skeleton></p-skeleton>
+          </div>
+          <div *ngIf="!isLoading" class="status-text">
+            Functional Review
+            <span class="lowercase-text">{{ functionalReview.length }} </span>
+          </div>
+          <div
+            cdkDropList
+            id="Functional Review"
+            #functionalReviewList="cdkDropList"
+            [cdkDropListData]="functionalReview"
+            [cdkDropListConnectedTo]="[todoList, inProgressList, doneList]"
+            (cdkDropListDropped)="drop($event)"
+          >
+            <ng-container *ngIf="isLoading">
+              <p-skeleton
+                styleClass="rectangular-skeleton"
+                shape="rectangle"
+                width="220px"
+                height="94px"
+              ></p-skeleton>
+              <p-skeleton
+                styleClass="rectangular-skeleton"
+                shape="rectangle"
+                width="220px"
+                height="94px"
+              ></p-skeleton>
+              <p-skeleton
+                styleClass="rectangular-skeleton"
+                shape="rectangle"
+                width="220px"
+                height="94px"
+              ></p-skeleton>
+
+            </ng-container>
+            <ng-container *ngIf="!isLoading">
+              <div
+                class="example-box"
+                *ngFor="let item of functionalReview"
+                cdkDrag
+              >
+                <div class="issue-wrap" (click)="openDialog(item)">
+                  <div class="issue">
+                    <p class="text-dark">{{ item.title }}</p>
+                    <div class="flex-items">
+                      <div class="avatar">
+                        <img
+                          src="{{
+                            this.fetchAvatarFromAssignee(item.assignee)
+                          }}"
+                        />
+                      </div>
+                      <span class="story-type"
+                        >{{ item?.type }}-{{ item?._id?.substring(3, 7) }}</span
+                      >
+                      <span class="type-priority">
+                        <span
+                          [ngClass]="{
+                            high: getPriority(item.priority) === 'High',
+                            low: getPriority(item.priority) === 'Low',
+                            medium: getPriority(item.priority) === 'Medium'
+                          }"
+                        >
+                          <i class="pi pi-arrow-up"></i>
+                        </span>
+                        <span class="priority">
+                          <span
+                            [ngClass]="{
+                              story: item.type == 'story',
+                              bug: item.type == 'bug',
+                              task: item.type == 'task',
+                              spike: item.type == 'spike'
+                            }"
+                          >
+                            <i
+                              class="pi"
+                              [ngClass]="{
+                                'pi-bookmark-fill': item.type == 'story',
+                                'pi-circle-fill': item.type == 'bug',
+                                'pi-check': item.type == 'task',
+                                'pi-arrow-up-right': item.type == 'spike'
+                              }"
+                            ></i>
+                          </span>
+                        </span>
+                      </span>
+                    </div>
+                    <div class="flex-items" style="margin-left: unset"></div>
+                  </div>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+
+      <div class="todo-container">
+        <div class="status-list">
+          <div *ngIf="isLoading" class="status-text">
+            <p-skeleton></p-skeleton>
+          </div>
+          <div *ngIf="!isLoading" class="status-text">
+            Done
+            <span class="lowercase-text"> {{ done.length }} </span>
+          </div>
+          <div
+            id="Done"
+            cdkDropList
+            #doneList="cdkDropList"
+            [cdkDropListData]="done"
+            [cdkDropListConnectedTo]="[
+              todoList,
+              inProgressList,
+              functionalReviewList
+            ]"
+            (cdkDropListDropped)="drop($event)"
+          >
+            <ng-container *ngIf="isLoading">
+              <p-skeleton
+                styleClass="rectangular-skeleton"
+                shape="rectangle"
+                width="220px"
+                height="94px"
+              ></p-skeleton>
+              <p-skeleton
+                styleClass="rectangular-skeleton"
+                shape="rectangle"
+                width="220px"
+                height="94px"
+              ></p-skeleton>
+              <p-skeleton
+                styleClass="rectangular-skeleton"
+                shape="rectangle"
+                width="220px"
+                height="94px"
+              ></p-skeleton>
+            </ng-container>
+            <ng-container *ngIf="!isLoading">
+              <div class="example-box" *ngFor="let item of done" cdkDrag>
+                <div class="issue-wrap" (click)="openDialog(item)">
+                  <div class="issue">
+                    <p class="text-dark">{{ item.title }}</p>
+                    <div class="flex-items">
+                      <div class="avatar">
+                        <img
+                          src="{{
+                            this.fetchAvatarFromAssignee(item.assignee)
+                          }}"
+                        />
+                      </div>
+                      <span class="story-type"
+                        >{{ item?.type }}-{{ item?._id?.substring(3, 7) }}</span
+                      >
+                      <span class="type-priority">
+                        <span
+                          [ngClass]="{
+                            high: getPriority(item.priority) === 'High',
+                            low: getPriority(item.priority) === 'Low',
+                            medium: getPriority(item.priority) === 'Medium'
+                          }"
+                        >
+                          <i class="pi pi-arrow-up"></i>
+                        </span>
+                        <span class="priority">
+                          <span
+                            [ngClass]="{
+                              story: item.type == 'story',
+                              bug: item.type == 'bug',
+                              task: item.type == 'task',
+                              spike: item.type == 'spike'
+                            }"
+                          >
+                            <i
+                              class="pi"
+                              [ngClass]="{
+                                'pi-bookmark-fill': item.type == 'story',
+                                'pi-circle-fill': item.type == 'bug',
+                                'pi-check': item.type == 'task',
+                                'pi-arrow-up-right': item.type == 'spike'
+                              }"
+                            ></i>
+                          </span>
+                        </span>
+                      </span>
+                    </div>
+                    <div class="flex-items" style="margin-left: unset"></div>
+                  </div>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!--Dialog-->
+  <p-dialog
+    header="Header"
+    [(visible)]="displayModal"
+    [modal]="true"
+    [style]="{ width: '50vw', position: 'absolute' }"
+    [draggable]="false"
+    [resizable]="false"
+  >
+    <ng-template pTemplate="header">
+      <div class="issue-detail">
+        <div class="full-width">
+          <div class="text-dark">
+            <div class="issue-type">
+              <div class="type-dropdown">
+                <div class="dropdown-trigger">
+                  <span class="story">
+                    <i class="pi pi-bookmark-fill"></i>
+                  </span>
+                  <span class="with-padding"
+                    >{{ dialogItem?.type }}-{{
+                      dialogItem?.id?.substring(3, 7)
+                    }}</span
+                  >
+                  <span class="feedback-delete">
+                    <span class="delete">
+                      <i
+                        class="pi pi-trash"
+                        style="cursor: pointer"
+                        (click)="deleteIssue()"
+                      ></i>
+                    </span>
+                    <a
+                      target="_blank"
+                      href="https://github.com/officialbidisha"
+                      style="display: inline"
+                    >
+                      <span class="feedback">
+                        <i class="pi pi-github"></i>
+                        <span class="with-padding">Give Feedback</span>
+                      </span>
+                    </a>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <h2>{{ selectedTitle }}</h2>
+      </div>
+    </ng-template>
+
+    <p>Description</p>
+    <div class="row">
+      <div class="col-6">
+        <textarea
+          style="min-height: 180px; text-overflow: ellipsis"
+          [rows]="3"
+          [cols]="30"
+          pInputTextarea
+          [(ngModel)]="property"
+          [autoResize]="autoResize"
+        ></textarea>
+      </div>
+      <div class="col-3 issue-detail-card">
+        <div class="status">
+          <p class="status-one">Status</p>
+          <div class="status-dropdown dialog-dropdown">
+            <p-dropdown
+              [options]="statusOptions"
+              [(ngModel)]="selectedStatus"
+              optionLabel="value"
+            ></p-dropdown>
+          </div>
+        </div>
+        <div class="assignee">
+          <p class="assignee-one">Assignee</p>
+          <div class="assignee-dropdown dialog-dropdown">
+            <p-dropdown
+              [options]="countries"
+              [(ngModel)]="selectedAssignee"
+              optionLabel="value"
+              [showClear]="true"
+            ></p-dropdown>
+          </div>
+        </div>
+        <div class="priority">
+          <p class="priority-one">Priority</p>
+          <div class="priority-dropdown dialog-dropdown">
+            <p-dropdown
+              [options]="priorityOptions"
+              [(ngModel)]="selectedPriority"
+              optionLabel="value"
+            ></p-dropdown>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <p-button
+        icon="pi pi-check"
+        (click)="displayModal = false"
+        label="Save"
+        styleClass="p-button-text"
+        (click)="saveIssueDetail()"
+      ></p-button>
+    </ng-template>
+  </p-dialog>
+
+  <!--Create Issue Modal-->
+  <p-dialog
+    header="Create new Issue"
+    class="create-issue-modal"
+    [(visible)]="displayCreateIssueModal"
+    [modal]="true"
+    [style]="{ width: '50vw' }"
+    [draggable]="false"
+    [resizable]="false"
+    (onHide)="resetCloseDialog()"
+  >
+    <div class="p-m-0">
+      <form>
+        <form
+          class="create-issue-form"
+          [formGroup]="createIssueForm"
+          (ngSubmit)="onSubmit(createIssueForm)"
+        >
+          <div>
+            <p class="label">Title*</p>
+            <input
+              formControlName="title"
+              pInputText
+              type="text"
+              placeholder="Issue Title"
+            />
+            <p
+              class="error-label"
+              *ngIf="
+                this.isSubmitted &&
+                this.createIssueForm.controls['title']?.errors
+              "
+            >
+              Enter the required title
+            </p>
+          </div>
+          <div>
+            <p class="label">Description*</p>
+            <textarea
+              formControlName="description"
+              pInputTextarea
+              type="text"
+              placeholder="Issue Description"
+            ></textarea>
+            <p
+              class="error-label"
+              *ngIf="
+                this.isSubmitted &&
+                this.createIssueForm.controls['description']?.errors
+              "
+            >
+              Enter the required description
+            </p>
+          </div>
+          <div class="row">
+            <div class="col-6">
+              <p class="label">Priority*</p>
+              <p-dropdown
+                [options]="priorityOptions"
+                formControlName="priority"
+                optionLabel="value"
+                appendTo="body"
+                placeholder="Select priority"
+              ></p-dropdown>
+              <p
+                class="error-label"
+                *ngIf="
+                  this.isSubmitted &&
+                  this.createIssueForm.controls['priority']?.errors
+                "
+              >
+                Select the priority
+              </p>
+            </div>
+            <div class="col-6">
+              <p class="label">Story Type*</p>
+              <p-dropdown
+                [options]="storyTypeOptions"
+                formControlName="type"
+                optionLabel="label"
+                appendTo="body"
+                placeholder="Select story type"
+              ></p-dropdown>
+              <p
+                class="error-label"
+                *ngIf="
+                  this.isSubmitted &&
+                  this.createIssueForm.controls['type']?.errors
+                "
+              >
+                Select the story type
+              </p>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-6">
+              <p class="label">Story Point*</p>
+              <p-dropdown
+                [options]="storyPointOptions"
+                formControlName="storypoint"
+                optionLabel="value"
+                appendTo="body"
+                placeholder="Select story point"
+              ></p-dropdown>
+              <p
+                class="error-label"
+                *ngIf="
+                  this.isSubmitted &&
+                  this.createIssueForm.controls['storypoint']?.errors
+                "
+              >
+                Select the story point
+              </p>
+            </div>
+            <div class="col-6">
+              <p class="label">Assignee*</p>
+              <p-dropdown
+                [options]="assigneeOptions"
+                formControlName="assignee"
+                optionLabel="value"
+                appendTo="body"
+                placeholder="Select assignee"
+              ></p-dropdown>
+              <p
+                class="error-label"
+                *ngIf="
+                  this.isSubmitted &&
+                  this.createIssueForm.controls['assignee']?.errors
+                "
+              >
+                Select the assignee
+              </p>
+            </div>
+          </div>
+
+          <p-button
+            type="submit"
+            label="Create"
+            class="submit-issue"
+            icon="pi pi-check"
+          ></p-button>
+        </form>
+      </form>
+    </div>
+    <ng-template pTemplate="footer">
+      <p-button
+        (click)="displayCreateIssueModal = false"
+        label="Cancel"
+        styleClass="p-button-text"
+        class="cancel-button"
+      ></p-button>
+    </ng-template>
+  </p-dialog>
+</div>
