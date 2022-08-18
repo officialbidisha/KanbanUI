@@ -1,5 +1,5 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
-import { FormGroup, FormControl, Validators } from '@angular/forms';
+import { UntypedFormGroup, UntypedFormControl, Validators } from '@angular/forms';
 import { Subject, fromEvent, filter, debounceTime, distinctUntilChanged, tap } from 'rxjs';
 import { MenuItem, MessageService, SelectItem } from 'primeng/api';
 import { Issue } from 'src/app/shared/interfaces/Project';
@@ -44,7 +44,7 @@ export class BoardComponent implements OnInit {
   /**
    * Form for create issue
    */
-  public createIssueForm!: FormGroup;
+  public createIssueForm!: UntypedFormGroup;
 
   /**
    * Dropdowns
@@ -128,13 +128,13 @@ export class BoardComponent implements OnInit {
 
   ngOnInit() {
     this.populateMemberIssues();
-    this.createIssueForm = new FormGroup({
-      title: new FormControl('', Validators.required),
-      description: new FormControl('', Validators.required),
-      priority: new FormControl(null, Validators.required),
-      assignee: new FormControl(null, Validators.required),
-      type: new FormControl(null, Validators.required),
-      storypoint: new FormControl(null, Validators.required),
+    this.createIssueForm = new UntypedFormGroup({
+      title: new UntypedFormControl('', Validators.required),
+      description: new UntypedFormControl('', Validators.required),
+      priority: new UntypedFormControl(null, Validators.required),
+      assignee: new UntypedFormControl(null, Validators.required),
+      type: new UntypedFormControl(null, Validators.required),
+      storypoint: new UntypedFormControl(null, Validators.required),
     });
 
     this.items = [
@@ -144,7 +144,7 @@ export class BoardComponent implements OnInit {
     ];
   }
 
-  public onSubmit(form: FormGroup) {
+  public onSubmit(form: UntypedFormGroup) {
     this.isSubmitted = true;
     if (!this.createIssueForm.valid) {
       return;

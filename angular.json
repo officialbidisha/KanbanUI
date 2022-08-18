@@ -118,5 +118,7 @@
       }
     }
   },
-  "defaultProject": "jira"
+  "cli": {
+    "analytics": "ef82702e-4970-4b0b-97b3-087ba336a72b"
+  }
 }
