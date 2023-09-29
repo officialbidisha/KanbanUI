@@ -4,7 +4,7 @@
 
 export const environment = {
   production: false,
-  baseUrl: 'https://jira-kanban.herokuapp.com/api/'
+  baseUrl: 'https://kanban-be.vercel.app/api/'
 };
 
 /*
